@@ -1,226 +1,95 @@
-      document.getElementById("year").textContent = new Date().getFullYear();
+(() => {
+  'use strict';
 
-      const toggle = document.querySelector(".nav-toggle");
-      const links = document.querySelector(".nav-links");
-      toggle.addEventListener("click", () => {
-        const open = links.classList.toggle("open");
-        toggle.setAttribute("aria-expanded", open);
-        toggle.classList.toggle("is-open", open);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const toggle = document.querySelector('.nav-toggle');
+  const nav = document.querySelector('.nav-links');
+  const navLinks = [...document.querySelectorAll('.nav-links a')];
+
+  const closeMenu = () => {
+    toggle?.setAttribute('aria-expanded', 'false');
+    toggle?.setAttribute('aria-label', 'Abrir menu');
+    nav?.classList.remove('open');
+    document.body.classList.remove('menu-open');
+  };
+
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    nav?.classList.toggle('open', open);
+    document.body.classList.toggle('menu-open', open);
+  });
+
+  navLinks.forEach((link) => link.addEventListener('click', closeMenu));
+  document.addEventListener('keydown', (event) => event.key === 'Escape' && closeMenu());
+
+  const revealItems = document.querySelectorAll('.reveal');
+  if (reducedMotion || !('IntersectionObserver' in window)) {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+  } else {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
       });
-      document.querySelectorAll(".nav-links a").forEach((a) => {
-        a.addEventListener("click", () => {
-          links.classList.remove("open");
-          toggle.classList.remove("is-open");
-          toggle.setAttribute("aria-expanded", "false");
-        });
+    }, { threshold: 0.14, rootMargin: '0px 0px -40px' });
+    revealItems.forEach((item, index) => {
+      item.style.transitionDelay = `${Math.min(index % 4, 3) * 70}ms`;
+      revealObserver.observe(item);
+    });
+  }
+
+  const sections = document.querySelectorAll('main section[id]');
+  if ('IntersectionObserver' in window) {
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach((link) => link.classList.toggle('active', link.hash === `#${entry.target.id}`));
       });
+    }, { rootMargin: '-35% 0px -55%', threshold: 0 });
+    sections.forEach((section) => sectionObserver.observe(section));
+  }
 
-      const galleries = document.querySelectorAll("[data-gallery]");
-      const lightbox = document.querySelector(".gallery-lightbox");
-      const lightboxImg = lightbox?.querySelector("img");
-      const lightboxCaption = lightbox?.querySelector("figcaption");
-      const closeLightbox = lightbox?.querySelector(".lightbox-close");
-      const lightboxPrev = lightbox?.querySelector(".lightbox-prev");
-      const lightboxNext = lightbox?.querySelector(".lightbox-next");
-      let activeGallery = null;
-      let activeIndex = 0;
+  if (reducedMotion || typeof window.particlesJS !== 'function') return;
 
-      function setGalleryImage(gallery, index) {
-        const thumbs = [...gallery.querySelectorAll(".gallery-thumb")];
-        const mainImg = gallery.querySelector(".gallery-main img");
-        const caption = gallery.querySelector(".gallery-caption");
-        const count = gallery.querySelector(".gallery-count");
-        const selectedImg = thumbs[index]?.querySelector("img");
-
-        if (!selectedImg || !mainImg) return;
-
-        activeIndex = index;
-        mainImg.style.opacity = "0";
-
-        window.setTimeout(() => {
-          mainImg.src = selectedImg.src;
-          mainImg.alt = selectedImg.alt;
-          mainImg.style.opacity = "1";
-        }, 120);
-
-        thumbs.forEach((thumb, thumbIndex) => {
-          thumb.classList.toggle("is-active", thumbIndex === index);
-        });
-
-        if (caption) caption.textContent = selectedImg.dataset.caption || selectedImg.alt;
-        if (count) count.textContent = `${index + 1} / ${thumbs.length}`;
-
-        if (lightbox?.classList.contains("is-open")) {
-          updateLightbox(selectedImg);
-        }
+  window.particlesJS('particles-js', {
+    particles: {
+      number: { value: window.innerWidth < 680 ? 32 : 58, density: { enable: true, value_area: 900 } },
+      color: { value: ['#b94f73', '#d795ab', '#918a90'] },
+      shape: { type: 'circle' },
+      opacity: { value: 0.68, random: true },
+      size: { value: 3.2, random: true },
+      line_linked: {
+        enable: true,
+        distance: 145,
+        color: '#bc8fa0',
+        opacity: 0.38,
+        width: 1
+      },
+      move: {
+        enable: true,
+        speed: 0.75,
+        direction: 'none',
+        random: true,
+        straight: false,
+        out_mode: 'out',
+        bounce: false
       }
-
-      function moveGallery(gallery, direction) {
-        const total = gallery.querySelectorAll(".gallery-thumb").length;
-        const nextIndex = (activeIndex + direction + total) % total;
-        setGalleryImage(gallery, nextIndex);
+    },
+    interactivity: {
+      detect_on: 'canvas',
+      events: {
+        onhover: { enable: true, mode: 'grab' },
+        onclick: { enable: true, mode: 'push' },
+        resize: true
+      },
+      modes: {
+        grab: { distance: 150, line_linked: { opacity: 0.58 } },
+        push: { particles_nb: 3 }
       }
-
-      function updateLightbox(img) {
-        if (!lightboxImg || !lightboxCaption || !img) return;
-        lightboxImg.src = img.src;
-        lightboxImg.alt = img.alt;
-        lightboxCaption.textContent = img.dataset.caption || img.alt;
-      }
-
-      function openLightbox(gallery) {
-        const currentImg = gallery.querySelector(".gallery-thumb.is-active img");
-        activeGallery = gallery;
-        updateLightbox(currentImg);
-        lightbox?.classList.add("is-open");
-        lightbox?.setAttribute("aria-hidden", "false");
-        closeLightbox?.focus();
-      }
-
-      function hideLightbox() {
-        lightbox?.classList.remove("is-open");
-        lightbox?.setAttribute("aria-hidden", "true");
-      }
-
-      galleries.forEach((gallery) => {
-        const thumbs = [...gallery.querySelectorAll(".gallery-thumb")];
-        const mainButton = gallery.querySelector(".gallery-main");
-        const prev = gallery.querySelector(".gallery-prev");
-        const next = gallery.querySelector(".gallery-next");
-
-        thumbs.forEach((thumb, index) => {
-          thumb.addEventListener("click", () => {
-            activeGallery = gallery;
-            setGalleryImage(gallery, index);
-          });
-        });
-
-        mainButton?.addEventListener("click", () => openLightbox(gallery));
-        prev?.addEventListener("click", () => {
-          activeGallery = gallery;
-          moveGallery(gallery, -1);
-        });
-        next?.addEventListener("click", () => {
-          activeGallery = gallery;
-          moveGallery(gallery, 1);
-        });
-      });
-
-      closeLightbox?.addEventListener("click", hideLightbox);
-      lightbox?.addEventListener("click", (event) => {
-        if (event.target === lightbox) hideLightbox();
-      });
-      lightboxPrev?.addEventListener("click", () => {
-        if (activeGallery) moveGallery(activeGallery, -1);
-      });
-      lightboxNext?.addEventListener("click", () => {
-        if (activeGallery) moveGallery(activeGallery, 1);
-      });
-      document.addEventListener("keydown", (event) => {
-        if (!lightbox?.classList.contains("is-open")) return;
-        if (event.key === "Escape") hideLightbox();
-        if (event.key === "ArrowLeft" && activeGallery) moveGallery(activeGallery, -1);
-        if (event.key === "ArrowRight" && activeGallery) moveGallery(activeGallery, 1);
-      });
-
-      document.querySelectorAll(".project-card").forEach((card) => {
-        card.addEventListener("pointermove", (event) => {
-          const rect = card.getBoundingClientRect();
-          card.style.setProperty("--x", `${event.clientX - rect.left}px`);
-          card.style.setProperty("--y", `${event.clientY - rect.top}px`);
-        });
-      });
-
-      const canvas = document.getElementById('particleCanvas');
-const ctx = canvas.getContext('2d');
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-const particlesArray = [];
-
-function getParticleCount() {
-    if (window.innerWidth <= 480) return 18;
-    if (window.innerWidth <= 820) return 28;
-    return 42;
-}
-
-class Particle {
-    constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 5 + 4; 
-        this.speedX = Math.random() * 1 - 0.5; 
-        this.speedY = Math.random() * 1 - 0.5; 
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = Math.random() * 0.02 - 0.01;
-        this.color = 'rgba(255, 185, 218, 0.34)';
-    }
-
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.rotation += this.rotationSpeed;
-
-        if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
-        if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
-    }
-
-    draw() {
-        const spikes = 5;
-        const outerRadius = this.size;
-        const innerRadius = this.size * 0.45;
-
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = 'rgba(255, 185, 218, 0.22)';
-        ctx.shadowBlur = 5;
-        ctx.beginPath();
-        for (let i = 0; i < spikes * 2; i++) {
-            const radius = i % 2 === 0 ? outerRadius : innerRadius;
-            const angle = (Math.PI / spikes) * i - Math.PI / 2;
-            const pointX = Math.cos(angle) * radius;
-            const pointY = Math.sin(angle) * radius;
-
-            if (i === 0) {
-                ctx.moveTo(pointX, pointY);
-            } else {
-                ctx.lineTo(pointX, pointY);
-            }
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    }
-}
-
-function init() {
-    particlesArray.length = 0;
-    const numberOfParticles = getParticleCount();
-
-    for (let i = 0; i < numberOfParticles; i++) {
-        particlesArray.push(new Particle());
-    }
-}
-
-window.addEventListener('resize', init);
-
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    for (let i = 0; i < particlesArray.length; i++) {
-        particlesArray[i].update();
-        particlesArray[i].draw();
-    }
-    
-    requestAnimationFrame(animate);
-}
-
-init();
-animate();
+    },
+    retina_detect: true
+  });
+})();
