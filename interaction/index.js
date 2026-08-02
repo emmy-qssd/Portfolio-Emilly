@@ -1,3 +1,5 @@
+// Menu de navegação/ para mobile também
+
 (() => {
   'use strict';
 
@@ -24,6 +26,7 @@
   navLinks.forEach((link) => link.addEventListener('click', closeMenu));
   document.addEventListener('keydown', (event) => event.key === 'Escape' && closeMenu());
 
+  // Animação para revelar as informações ao dar scroll
   const revealItems = document.querySelectorAll('.reveal');
   if (reducedMotion || !('IntersectionObserver' in window)) {
     revealItems.forEach((item) => item.classList.add('is-visible'));
@@ -54,6 +57,7 @@
 
   if (reducedMotion || typeof window.particlesJS !== 'function') return;
 
+  // Animações de fundo usando extensão
   window.particlesJS('particles-js', {
     particles: {
       number: { value: window.innerWidth < 680 ? 32 : 58, density: { enable: true, value_area: 900 } },
