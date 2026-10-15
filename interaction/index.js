@@ -1,308 +1,580 @@
-(() => {
-  'use strict';
-  const root = document.documentElement;
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-    console.warn('GSAP/ScrollTrigger não carregaram. Verifique a conexão.');
-    return;
-  }
-  gsap.registerPlugin(ScrollTrigger);
+/* ==========================================================
+   app.js — Gato 3D (GLTF) + OrbitControls + tema + cursor
+   Three.js r160 via importmap · GSAP global (CDN no HTML)
+   ========================================================== */
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-  let onThemeChange = null;
+/* ----------------------------------------------------------
+   CONFIGURAÇÃO — troque pelo caminho do seu modelo
+   ---------------------------------------------------------- */
 
-  /* ========== TEMA ========== */
-  function initTheme() {
-    const btn = document.getElementById('theme-toggle');
-    if (!btn) return;
-    btn.setAttribute('aria-pressed', root.dataset.theme === 'dark');
-    btn.addEventListener('click', () => {
-      const toDark = root.dataset.theme !== 'dark';
-      root.dataset.theme = toDark ? 'dark' : 'light';
-      btn.setAttribute('aria-pressed', String(toDark));
-      try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
-      if (onThemeChange) onThemeChange(toDark);
-    });
-  }
+const gsap = window.gsap;
+const root = document.documentElement;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canFinePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+const rand = (a, b) => a + Math.random() * (b - a);
 
-  /* ========== LETRA "O" (orelhas + cauda) ========== */
-  function initLetterO() {
-    if (!document.querySelector('.o-cat')) return;
-    gsap.set('.ear-l', { transformOrigin: '70% 100%' });
-    gsap.set('.ear-r', { transformOrigin: '30% 100%' });
-      gsap.set('.o-tail', { transformOrigin: '50% 0%' });
+/* ==========================================================
+   1. TEMA (Dark padrão / Light) — paleta e estado
+   ========================================================== */
+const THEMES = {
+  dark: { bg: '#000000', fg: '#ffffff', muted: 'rgba(255,255,255,0.56)', line: 'rgba(255,255,255,0.14)' },
+  light: { bg: '#ffffff', fg: '#000000', muted: 'rgba(0,0,0,0.56)', line: 'rgba(0,0,0,0.12)' },
+};
 
-    const twitch = (sel, delay, dir) => {
-      gsap.timeline({ repeat: -1, repeatDelay: gsap.utils.random(1.5, 3.5), delay })
-        .to(sel, { rotation: 14 * dir, duration: 0.08, ease: 'power1.out' })
-        .to(sel, { rotation: -6 * dir, duration: 0.1 })
-        .to(sel, { rotation: 0, duration: 0.35, ease: 'elastic.out(1,.4)' });
-    };
-    twitch('.ear-l', 2, -1);
-    twitch('.ear-r', 2.6, 1);
-    gsap.fromTo('.o-tail', { rotation: -9 }, { rotation: 9, duration: 1.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-  }
+const ACCENT_HEX = 0xa9cce8; // Azul-bebê pastel
+const CAT_BLACK = new THREE.Color(0x0a0a0a);
+const CAT_WHITE = new THREE.Color(0xf7f7f7);
 
-  /* ========== REVELAÇÕES COM SCROLLTRIGGER ========== */
-  function initReveals() {
-    gsap.from('.nav-wrap', { y: -40, opacity: 0, duration: 0.9, ease: 'power3.out' });
-    gsap.from('.title', { y: 40, opacity: 0, duration: 1.2, delay: 0.2, ease: 'power3.out' });
-    gsap.from('.role', { x: -20, opacity: 0, duration: 1, delay: 0.7, ease: 'power3.out' });
+const toggle = document.querySelector('.theme-toggle');
+const toggleLabel = toggle.querySelector('.label');
+const knob = toggle.querySelector('.knob');
 
-    gsap.utils.toArray('.sec-title').forEach((el) => {
-      gsap.timeline({ scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' } })
-        .from(el.querySelectorAll('.line'), { scaleX: 0, transformOrigin: 'left center', duration: 0.9, ease: 'power3.inOut' })
-        .from(el.querySelector('.num'), { yPercent: 60, opacity: 0, duration: 0.7, ease: 'power3.out' }, 0.1)
-        .from(el.querySelector('h2'), { x: -20, opacity: 0, duration: 0.7, ease: 'power3.out' }, 0.25);
-    });
-
-    gsap.utils.toArray('.reveal').forEach((el) => {
-      gsap.from(el, { y: 50, opacity: 0, duration: 0.9, ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' } });
-    });
-
-    gsap.set('.stagger > *', { autoAlpha: 0, y: 40 });
-    ScrollTrigger.batch('.stagger > *', {
-      start: 'top 90%',
-      onEnter: (b) => gsap.to(b, { autoAlpha: 1, y: 0, stagger: 0.12, duration: 0.8, ease: 'power3.out', overwrite: true }),
-      onLeaveBack: (b) => gsap.to(b, { autoAlpha: 0, y: 40, duration: 0.4, overwrite: true }),
-    });
-  }
-
-  /* ========== GATO 3D ========== */
-  function initCat() {
-    const canvas = document.getElementById('cat-canvas');
-    if (typeof THREE === 'undefined' || !canvas) return;
-    let renderer;
-    try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
-    catch (e) { console.warn('WebGL indisponível:', e); return; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.outputEncoding = THREE.sRGBEncoding;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-    camera.position.z = 12;
-
-    const M = {
-      body: new THREE.MeshStandardMaterial({ color: 0x17151a, roughness: 0.78, metalness: 0 }),
-      eye: new THREE.MeshStandardMaterial({ color: 0xfffaf4, roughness: 0.5 }),
-      nose: new THREE.MeshStandardMaterial({ color: 0xf4a6b5, roughness: 0.28 }),
-      inner: new THREE.MeshStandardMaterial({ color: 0xf2a5b8, roughness: 0.45 }),
-      whisk: new THREE.LineBasicMaterial({ color: 0xffffff }),
-    };
-    scene.add(new THREE.HemisphereLight(0xfff5f0, 0x41354a, 1.2));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
-    keyLight.position.set(-3, 6, 8); scene.add(keyLight);
-    const rimLight = new THREE.PointLight(0xd5c4ff, 3, 18);
-    rimLight.position.set(3, 2, -3); scene.add(rimLight);
-    const SPH = new THREE.SphereGeometry(1, 32, 24);
-    const mesh = (geo, mat, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(geo, mat); m.scale.set(sx, sy, sz); return m; };
-
-    // hierarquia: rig (posição/escala) > flip (pulo/cambalhota) > cat (pose)
-    const rig = new THREE.Group(), flip = new THREE.Group(), cat = new THREE.Group();
-    rig.add(flip); flip.add(cat); scene.add(rig);
-    cat.position.x = 0.3;
-
-    const body = mesh(SPH, M.body, 1.7, 0.75, 0.8); body.position.set(-0.2, 0, 0);
-    const hips = mesh(SPH, M.body, 0.85, 0.8, 0.8);
-    cat.add(body, hips);
-
-    // patas (4): deitado ficam esticadas; em pé caminham
-    const legs = [
-      { x: 0.95, z: 0.28, f: true, ph: 0 }, { x: 0.7, z: -0.28, f: true, ph: Math.PI },
-      { x: -1.15, z: 0.28, f: false, ph: Math.PI }, { x: -0.95, z: -0.28, f: false, ph: 0 },
-    ].map((d) => {
-      const g = new THREE.Group(); g.position.set(d.x, -0.55, d.z);
-      const m = mesh(SPH, M.body, 0.15, 0.46, 0.15); m.position.y = -0.42;
-      const paw = mesh(SPH, M.body, 0.23, 0.12, 0.2); paw.position.set(0.06, -0.9, 0);
-      g.add(m, paw); cat.add(g); return Object.assign(d, { g });
-    });
-
-    // cabeça
-    const head = new THREE.Group(); cat.add(head);
-    head.add(mesh(SPH, M.body, 0.8, 0.64, 0.62));
-    [-1, 1].forEach((s) => { const c = mesh(SPH, M.body, 0.3, 0.22, 0.3); c.position.set(s * 0.5, -0.2, 0.25); head.add(c); });
-    const earGeo = new THREE.ConeGeometry(0.31, 0.7, 3), innerGeo = new THREE.ConeGeometry(0.16, 0.42, 3);
-    const ears = [-1, 1].map((s) => {
-      const p = new THREE.Group(); p.position.set(s * 0.44, 0.42, 0); p.rotation.z = -s * 0.2;
-      const e = new THREE.Mesh(earGeo, M.body); e.position.y = 0.26;
-      const i = new THREE.Mesh(innerGeo, M.inner); i.position.set(0, 0.2, 0.06);
-      p.add(e, i); head.add(p); return p;
-    });
-    const eyes = [-1, 1].map((s) => { const e = mesh(SPH, M.eye, 0.13, 0.19, 0.05); e.position.set(s * 0.3, 0.1, 0.56); head.add(e); return e; });
-    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.1, 3), M.nose);
-    nose.rotation.z = Math.PI; nose.position.set(0, -0.1, 0.6); head.add(nose);
-    [-1, 1].forEach((s) => [-1, 0, 1].forEach((k) => {
-      const g = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(s * 0.3, -0.16, 0.57), new THREE.Vector3(s * 1.05, -0.14 + k * 0.14, 0.6)]);
-      head.add(new THREE.Line(g, M.whisk));
-    }));
-
-    // boca + dentinhos
-    const smile = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(-0.1, -0.2, 0.615), new THREE.Vector3(0, -0.29, 0.63), new THREE.Vector3(0.1, -0.2, 0.615));
-    head.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(smile.getPoints(16)), M.whisk));
-
-    // cauda
-    const tailPivot = new THREE.Group(); tailPivot.position.set(-1.55, -0.02, 0); cat.add(tailPivot);
-    const tailCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0, 0), new THREE.Vector3(-0.55, -0.08, 0),
-      new THREE.Vector3(-1.15, -0.02, 0), new THREE.Vector3(-1.45, 0.35, 0),
-      new THREE.Vector3(-1.4, 0.78, 0), new THREE.Vector3(-1.05, 0.95, 0)
-    ]);
-    tailPivot.add(new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 40, 0.105, 10, false), M.body));
-
-    /* ----- pose (GSAP anima, o frame aplica) ----- */
-    const pose = { stretch: 0, sleepy: 0, happy: 0, tuck: 0, stand: 0, turn: 0, walk: 0 };
-    const face = { dir: 1 }, trav = { n: 0 };
-    let phase = 0;
-
-    function applyPose(time, dt) {
-      const P = pose, st = P.stretch, tk = P.tuck, sd = P.stand;
-      phase += dt * 9 * P.walk;
-
-      const closed = Math.max(P.sleepy, P.happy);
-      eyes.forEach((e) => { e.scale.y = 0.19 * (1 - 0.9 * closed); });
-      head.rotation.set(0, P.turn * 0.95, Math.sin(time * 9) * 0.07 * P.happy);
-      head.position.set(1.55 + 0.45 * st - 0.4 * tk, 0.3 + 0.3 * sd - 0.12 * st - 0.25 * tk, 0);
-
-      body.scale.x = 1.7 * (1 + 0.12 * st - 0.3 * tk);
-      body.rotation.z = -0.1 * st + 0.03 * Math.sin(phase * 2) * P.walk;
-      hips.position.set(-1.3 + 0.3 * tk, -0.05 + 0.25 * st, 0);
-      cat.position.y = 0.82 * sd + Math.abs(Math.sin(phase)) * 0.07 * P.walk;
-      cat.scale.set(face.dir, 1 + 0.015 * Math.sin(time * 2), 1);
-
-      legs.forEach((L) => {
-        const rest = L.f ? 1.45 - 0.5 * tk : -1.3 + 0.4 * tk;
-        L.g.position.x = L.x + (L.f ? 0.55 * st - 0.4 * tk : 0.3 * tk);
-        L.g.rotation.z = rest * (1 - sd) + Math.sin(phase + L.ph) * 0.6 * P.walk;
-      });
-
-      tailPivot.rotation.z = Math.sin(time * 2.1) * 0.12 - 0.08 * sd;
-    }
-
-    // bocejo + espreguiçada em loop
-    const yawnTl = gsap.timeline({ repeat: -1, repeatDelay: 5, delay: 2 })
-      .to(pose, { sleepy: 1, duration: 0.6, ease: 'sine.inOut' })
-      .to(pose, { duration: 0.35 })
-      .to(pose, { sleepy: 0, duration: 0.5, ease: 'sine.inOut' });
-
-    /* ----- cores / tema ----- */
-    const setColors = (dark, dur, delay = 0) => {
-      const to = (mat, hex) => {
-        const c = new THREE.Color(hex);
-        if (dur) gsap.to(mat.color, { r: c.r, g: c.g, b: c.b, duration: dur, delay, ease: 'power1.inOut' });
-        else mat.color.copy(c);
-      };
-      to(M.body, dark ? 0xffffff : 0x000000);
-      to(M.eye, dark ? 0x000000 : 0xffffff);
-      to(M.whisk, dark ? 0x000000 : 0xffffff);
-    };
-    setColors(root.dataset.theme === 'dark', 0);
-
-    /* ----- estados: idle | leaving | away | returning ----- */
-    let state = 'idle', walkTl = null;
-
-    // cambalhota fofa: agacha, vira bolinha, rola com pulinho, pousa e pisca feliz
-    onThemeChange = (toDark) => {
-      setColors(toDark, 0.45);
-    };
-
-    // caminhar para a direita ao rolar para baixo
-    function walkAway() {
-      if (state === 'away' || state === 'leaving') return;
-      state = 'leaving'; yawnTl.pause(); if (walkTl) walkTl.kill();
-      walkTl = gsap.timeline({ onComplete: () => { state = 'away'; rig.visible = false; } })
-        .to(pose, { stretch: 0, sleepy: 0, happy: 0, tuck: 0, duration: 0.3 })
-        .to(face, { dir: -1, duration: 0.2 }, 0)
-        .to(pose, { stand: 1, duration: 0.7, ease: 'back.out(1.6)' })
-        .to(pose, { turn: 1, duration: 0.5, ease: 'power2.out' }, '<0.1')
-        .to(pose, { walk: 1, duration: 0.4 }, '>-0.1')
-        .to(trav, { n: 1, duration: 3, ease: 'power1.inOut' }, '<');
-    }
-    // volta andando pela direita, vira para a câmera e deita
-    function comeBack() {
-      if (state === 'idle' || state === 'returning') return;
-      const wasAway = state === 'away';
-      state = 'returning'; if (walkTl) walkTl.kill(); rig.visible = true;
-      walkTl = gsap.timeline({ onComplete: () => { state = 'idle'; yawnTl.restart(); } })
-        .to(pose, { stand: 1, turn: 1, walk: 1, duration: 0.3 }, 0)
-        .to(face, { dir: 1, duration: wasAway ? 0.01 : 0.3, ease: 'power2.inOut' }, 0)
-        .to(trav, { n: 0, duration: Math.max(0.9, 2.8 * trav.n), ease: 'power1.inOut' }, 0.2)
-        .to(face, { dir: 1, duration: 0.4, ease: 'power2.inOut' })
-        .to(pose, { walk: 0, duration: 0.3 }, '<')
-        .to(pose, { turn: 0, stand: 0, duration: 0.8, ease: 'power2.inOut' }, '<0.15');
-    }
-    ScrollTrigger.create({ start: 60, end: 'max', onEnter: walkAway, onLeaveBack: comeBack });
-    if (window.scrollY > 60) { // página recarregada já rolada
-      state = 'away'; trav.n = 1; rig.visible = false; pose.stand = 1; pose.turn = 1; yawnTl.pause();
-    }
-
-    /* ----- clique no gato: olhinhos fechados + corações ----- */
-    const heartTex = (() => {
-      const c = document.createElement('canvas'); c.width = c.height = 128;
-      const x = c.getContext('2d'); x.fillStyle = '#ff5c8a'; x.beginPath(); x.moveTo(64, 114);
-      x.bezierCurveTo(6, 72, 14, 14, 64, 40); x.bezierCurveTo(114, 14, 122, 72, 64, 114); x.fill();
-      return new THREE.CanvasTexture(c);
-    })();
-    function spawnHeart() {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTex, transparent: true, depthTest: false }));
-      const p = head.getWorldPosition(new THREE.Vector3()), s = rig.scale.x, size = s * (0.45 + Math.random() * 0.3);
-      sp.position.set(p.x + (Math.random() - 0.5) * 0.8 * s, p.y + 0.7 * s, 1); sp.scale.setScalar(0.01); scene.add(sp);
-      gsap.timeline({ onComplete: () => { scene.remove(sp); sp.material.dispose(); } })
-        .to(sp.scale, { x: size, y: size, duration: 0.3, ease: 'back.out(2)' })
-        .to(sp.position, { y: '+=' + (1.3 * s + Math.random() * 0.6), x: '+=' + (Math.random() - 0.5) * 1.2, duration: 1.5, ease: 'power1.out' }, 0)
-        .to(sp.material, { opacity: 0, duration: 0.5 }, 1.0);
-    }
-    let loving = false;
-    function love() {
-      if (loving || state !== 'idle') return;
-      loving = true;
-      for (let i = 0; i < 7; i++) gsap.delayedCall(i * 0.2, spawnHeart);
-      gsap.timeline({ onComplete: () => { loving = false; } })
-        .to(pose, { happy: 1, duration: 0.15 })
-        .to(pose, { happy: 0, duration: 0.3 }, '+=1.5');
-    }
-    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-    const overCat = (e) => {
-      if (state !== 'idle') return false;
-      const r = canvas.getBoundingClientRect();
-      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-      ray.setFromCamera(ndc, camera);
-      return ray.intersectObject(cat, true).some((h) => h.object.isMesh);
-    };
-    window.addEventListener('click', (e) => { if (!e.target.closest('a,button') && overCat(e)) love(); });
-    window.addEventListener('pointermove', (e) => { root.style.cursor = overCat(e) ? 'pointer' : ''; });
-
-    /* ----- layout responsivo ----- */
-    function resize() {
-      const w = canvas.clientWidth, h = canvas.clientHeight;
-      if (!w || !h) return;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h; camera.updateProjectionMatrix();
-    }
-    function place() {
-      const vh = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
-      const vw = vh * camera.aspect, mobile = window.innerWidth < 800;
-      const hero = mobile
-        ? { x: 0, y: -vh * 0.2, s: Math.min(1.1, (vw * 0.82) / 5.6) }
-        : { x: vw * 0.29, y: -vh * 0.03, s: Math.min(0.9, (vw * 0.34) / 5.6) };
-      const out = -vw / 2 - 3.8 * hero.s;
-      rig.position.set(hero.x + trav.n * (out - hero.x), hero.y, 0);
-      rig.scale.setScalar(hero.s);
-    }
-    window.addEventListener('resize', resize);
-    resize();
-    gsap.from(canvas, { opacity: 0, duration: 1.4, ease: 'power2.out' });
-
-    gsap.ticker.add((time, deltaTime) => {
-      place();
-      applyPose(time, Math.min(deltaTime, 50) / 1000);
-      renderer.render(scene, camera);
-    });
-  }
-
-  /* ========== INÍCIO ========== */
-  initTheme();
-  initLetterO();
-  initReveals();
-  try { initCat(); } catch (err) { console.error('Erro ao iniciar o gato 3D:', err); }
+const saved = (() => {
+  try { return localStorage.getItem('theme'); } catch { return null; }
 })();
+let isDark = saved ? saved === 'dark' : true;
+const toneState = { t: isDark ? 1 : 0 }; // 0 = preto, 1 = branco
+
+/* ==========================================================
+   2. RENDERER, CENA, CÂMERA
+   ========================================================== */
+const stage = document.getElementById('cat-stage');
+const canvas = stage.querySelector('canvas');
+const loaderEl = document.getElementById('loader');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0.8, 6.5);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enablePan = false;
+controls.enableZoom = false;       // zoom desligado para não brigar com o scroll da página
+controls.minPolarAngle = Math.PI * 0.32;
+controls.maxPolarAngle = Math.PI * 0.6;
+controls.autoRotate = false;        // a rotação é controlada pelo cursor
+controls.target.set(0, 0.4, 0);
+
+/* ==========================================================
+   3. ILUMINAÇÃO DE ESTÚDIO
+   Ambiente suave + key light com sombras + fill + rim azul-bebê
+   ========================================================== */
+const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+scene.add(ambient);
+
+const keyLight = new THREE.SpotLight(0xffffff, 60, 25, Math.PI / 6, 0.6, 1.4);
+keyLight.position.set(3.5, 6, 4.5);
+keyLight.target.position.set(0, 0.2, 0);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.bias = -0.0005;
+keyLight.shadow.radius = 6;
+scene.add(keyLight, keyLight.target);
+
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+fillLight.position.set(-4, 2, 3);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(ACCENT_HEX, 14, 12, 1.6);
+rimLight.position.set(-2.5, 2.2, -2.8);
+scene.add(rimLight);
+
+// Chão que recebe apenas a sombra (sombra sutil, fundo transparente)
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(10, 10),
+  new THREE.ShadowMaterial({ opacity: 0.18 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -1.25;
+floor.receiveShadow = true;
+scene.add(floor);
+
+/* ==========================================================
+   4. CARREGAMENTO DO MODELO (GLTFLoader + traverse)
+   ========================================================== */
+const catRoot = new THREE.Group(); // pivô: respiração + olhar para o cursor
+scene.add(catRoot);
+
+const catMaterials = [];   // materiais que receberão a troca de cor
+const catMeshes = [];      // malhas para raycasting
+let headBone = null;       // osso/nó da cabeça, se existir no modelo
+let eyeMeshes = [];        // malhas candidatas a olhos (para piscar)
+let modelPivot = null;     // grupo com o modelo já centralizado
+
+const loader = new GLTFLoader();
+
+loader.load(
+  MODEL_URL,
+  (gltf) => {
+    const model = gltf.scene;
+
+    // Centraliza e normaliza a escala do modelo
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 2.4 / maxDim;
+
+    model.scale.setScalar(scale);
+    model.position.sub(center.multiplyScalar(scale));
+    model.position.y -= 0.1;
+
+    modelPivot = new THREE.Group();
+    modelPivot.add(model);
+    catRoot.add(modelPivot);
+
+    // Percorre a hierarquia: sombras, materiais e nós especiais
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        catMeshes.push(child);
+
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((mat) => {
+          if (!mat || !mat.isMeshStandardMaterial) return;
+          // Clona para não afetar outros usos e garante controle independente
+          const m = mat.clone();
+          m.envMapIntensity = 1.0;
+          if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+          catMaterials.push(m);
+          if (Array.isArray(child.material)) {
+            child.material[child.material.indexOf(mat)] = m;
+          } else {
+            child.material = m;
+          }
+        });
+
+        // Heurística de nomes para olhos/cabeça (ajuste conforme seu modelo)
+        const n = (child.name || '').toLowerCase();
+        if (/eye|olho/.test(n)) eyeMeshes.push(child);
+      }
+
+      const nodeName = (child.name || '').toLowerCase();
+      if (!headBone && /head|cabeca|cabeça/.test(nodeName)) headBone = child;
+    });
+
+    // Materiais iniciais de acordo com o tema
+    updateCatTone();
+
+    // Sem IBL externo: ambiente neutro gerado por RoomEnvironment seria opcional.
+    // Entrada suave do modelo
+    gsap.from(modelPivot.scale, { x: 0.001, y: 0.001, z: 0.001, duration: 1.6, ease: 'expo.out' });
+    gsap.from(modelPivot.rotation, { y: -Math.PI * 0.5, duration: 2, ease: 'expo.out' });
+
+    loaderEl.classList.add('is-hidden');
+    startIdle();
+  },
+  (xhr) => {
+    if (xhr.total) {
+      const pct = Math.round((xhr.loaded / xhr.total) * 100);
+      loaderEl.textContent = `carregando modelo ${pct}%`;
+    }
+  },
+  (err) => {
+    console.error('Erro ao carregar o modelo 3D:', err);
+    loaderEl.textContent = 'erro ao carregar o modelo';
+  }
+);
+
+/* ==========================================================
+   5. TROCA DE COR DO GATO (GSAP tweena o toneState)
+   Claro → preto · Escuro → branco (com leve tint azul-bebê)
+   ========================================================== */
+const tmpColor = new THREE.Color();
+const tmpEmissive = new THREE.Color();
+
+function updateCatTone() {
+  tmpColor.lerpColors(CAT_BLACK, CAT_WHITE, toneState.t);
+  tmpEmissive.copy(new THREE.Color(ACCENT_HEX)).multiplyScalar(0.06 * toneState.t);
+  catMaterials.forEach((m) => {
+    m.color.copy(tmpColor);
+    m.emissive.copy(tmpEmissive);
+    m.roughness = THREE.MathUtils.lerp(0.55, 0.32, toneState.t);
+  });
+}
+
+/* ==========================================================
+   6. TEMA: transição de CSS e do modelo via GSAP
+   ========================================================== */
+function applyTheme(dark, instant = false) {
+  isDark = dark;
+  const t = THEMES[dark ? 'dark' : 'light'];
+  const d = instant ? 0 : 0.9;
+
+  gsap.to(root, {
+    '--bg': t.bg,
+    '--fg': t.fg,
+    '--muted': t.muted,
+    '--line': t.line,
+    duration: d,
+    ease: 'power2.inOut',
+    overwrite: 'auto',
+  });
+
+  if (instant) {
+    toneState.t = dark ? 1 : 0;
+    updateCatTone();
+  } else {
+    gsap.to(toneState, {
+      t: dark ? 1 : 0,
+      duration: d,
+      ease: 'power2.inOut',
+      onUpdate: updateCatTone,
+      overwrite: 'auto',
+    });
+  }
+
+  gsap.to(knob, { x: dark ? 22 : 0, duration: d, ease: 'power3.inOut' });
+  toggle.setAttribute('aria-pressed', String(dark));
+  toggleLabel.textContent = dark ? 'Escuro' : 'Claro';
+  root.dataset.theme = dark ? 'dark' : 'light';
+  floor.material.opacity = dark ? 0.35 : 0.18;
+}
+
+toggle.addEventListener('click', () => {
+  const next = !isDark;
+  applyTheme(next);
+  try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* ignora */ }
+});
+
+/* ==========================================================
+   7. RAYCASTING + CORAÇÕES (partículas) + micro-interação
+   ========================================================== */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let hoverCat = false;
+
+function setPointerFromEvent(e) {
+  const r = canvas.getBoundingClientRect();
+  pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+}
+
+function hitCat() {
+  if (!modelPivot) return false;
+  raycaster.setFromCamera(pointer, camera);
+  return raycaster.intersectObject(modelPivot, true).length > 0;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  setPointerFromEvent(e);
+  const over = hitCat();
+  if (over !== hoverCat) {
+    hoverCat = over;
+    setCursorMode(over ? 'cat' : 'default');
+  }
+});
+
+canvas.addEventListener('pointerleave', () => {
+  hoverCat = false;
+  setCursorMode('default');
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  setPointerFromEvent(e);
+  if (hitCat()) petCat();
+});
+
+/* --- Corações: sprites com textura de canvas (leves e nítidos) --- */
+function makeHeartTexture(fill) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.translate(64, 64);
+  g.scale(1, 1);
+  g.beginPath();
+  g.moveTo(0, 34);
+  g.bezierCurveTo(-60, -8, -36, -54, 0, -26);
+  g.bezierCurveTo(36, -54, 60, -8, 0, 34);
+  g.closePath();
+  g.fillStyle = fill;
+  g.shadowColor = fill;
+  g.shadowBlur = 12;
+  g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const heartTextures = [
+  makeHeartTexture('#a9cce8'), // azul-bebê
+  makeHeartTexture('#ffffff'), // branco
+  makeHeartTexture('#cfe4f5'), // azul-bebê claro
+];
+
+const HEART_POOL = 16;
+const hearts = Array.from({ length: HEART_POOL }, (_, i) => {
+  const mat = new THREE.SpriteMaterial({
+    map: heartTextures[i % heartTextures.length],
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.visible = false;
+  scene.add(sprite);
+  return { sprite, busy: false };
+});
+
+function emitHearts() {
+  const free = hearts.filter((h) => !h.busy).slice(0, 8);
+  const center = new THREE.Vector3(0, 0.6, 0);
+
+  free.forEach((h, i) => {
+    const s = h.sprite;
+    h.busy = true;
+    s.visible = true;
+    s.material.opacity = 0;
+
+    const side = i % 2 === 0 ? 1 : -1;
+    const startX = center.x + rand(-0.9, 0.9);
+    const startY = center.y + rand(-0.5, 0.2);
+    const startZ = center.z + rand(-0.4, 0.4);
+    s.position.set(startX, startY, startZ);
+    const base = rand(0.22, 0.34);
+    s.scale.setScalar(base * 0.2);
+
+    const driftX = side * rand(0.25, 0.8);
+    const riseY = rand(1.8, 2.8);
+    const life = rand(1.8, 2.6);
+    const delay = i * 0.12 + rand(0, 0.08);
+
+    gsap
+      .timeline({
+        delay,
+        onComplete() {
+          s.visible = false;
+          h.busy = false;
+        },
+      })
+      .to(s.scale, { x: base, y: base, z: base, duration: 0.5, ease: 'back.out(2)' }, 0)
+      .to(s.material, { opacity: 0.95, duration: 0.35, ease: 'power1.out' }, 0)
+      .to(
+        s.position,
+        {
+          x: startX + driftX,
+          y: startY + riseY,
+          duration: life,
+          ease: 'sine.out',
+        },
+        0
+      )
+      .to(
+        s.position,
+        {
+          x: `+=${Math.sin(i) * 0.25}`, // balanço lateral sutil
+          duration: life,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: 1,
+        },
+        0
+      )
+      .to(s.material, { opacity: 0, duration: 0.7, ease: 'power1.in' }, life - 0.7)
+      .to(s.scale, { x: base * 0.6, y: base * 0.6, z: base * 0.6, duration: 0.7, ease: 'power1.in' }, life - 0.7);
+  });
+}
+
+/* --- Micro-interação: vibração de felicidade + piscar, sem pular --- */
+function petCat() {
+  emitHearts();
+
+  if (!modelPivot) return;
+
+  gsap.killTweensOf(modelPivot.scale);
+  const base = modelPivot.scale.x; // escala atual (pós-intro)
+  const tl = gsap.timeline();
+
+  // Micro "pulsação" de felicidade (sem alterar a posição)
+  tl.to(modelPivot.scale, { x: base * 1.02, y: base * 1.02, z: base * 1.02, duration: 0.12, ease: 'power2.out' })
+    .to(modelPivot.scale, { x: base, y: base, z: base, duration: 0.6, ease: 'elastic.out(1, 0.5)' });
+
+  // Pequena vibração rotacional (quase imperceptível)
+  gsap.fromTo(
+    modelPivot.rotation,
+    { z: 0 },
+    { z: 0.025, duration: 0.08, yoyo: true, repeat: 3, ease: 'sine.inOut', overwrite: 'auto' }
+  );
+
+  // Piscar rápido e feliz (se houver malhas de olhos)
+  if (eyeMeshes.length) {
+    const scales = eyeMeshes.map((e) => e.scale);
+    gsap.to(scales, { y: 0.1, duration: 0.09, yoyo: true, repeat: 1, ease: 'power1.inOut', overwrite: 'auto' });
+  }
+}
+
+/* ==========================================================
+   8. ANIMAÇÃO CONTÍNUA (respiração + olhar para o cursor)
+   ========================================================== */
+function startIdle() {
+  if (reduceMotion || !modelPivot) return;
+
+  // Respiração: escala sutil e orgânica
+  gsap.to(modelPivot.scale, {
+    y: `*=1.012`,
+    x: `*=1.006`,
+    z: `*=1.006`,
+    duration: 2.6,
+    ease: 'sine.inOut',
+    yoyo: true,
+    repeat: -1,
+  });
+
+  // Flutuação vertical lenta do pivô
+  gsap.to(catRoot.position, { y: 0.06, duration: 3, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+}
+
+// Olhar suave para o cursor (rotação em X/Y) — quickTo para performance
+const yawTo = gsap.quickTo(catRoot.rotation, 'y', { duration: 1.2, ease: 'power3.out' });
+const pitchTo = gsap.quickTo(catRoot.rotation, 'x', { duration: 1.2, ease: 'power3.out' });
+
+window.addEventListener('pointermove', (e) => {
+  const nx = (e.clientX / window.innerWidth) * 2 - 1;
+  const ny = (e.clientY / window.innerHeight) * 2 - 1;
+  yawTo(nx * 0.22);
+  pitchTo(ny * 0.08);
+});
+
+/* ==========================================================
+   9. CURSOR PERSONALIZADO (patinha) — GSAP quickTo
+   ========================================================== */
+const cursorEl = document.querySelector('.cursor');
+const cursorInner = cursorEl.querySelector('.cursor-inner');
+const INTERACTIVE = 'a, button, [data-cursor="hover"]';
+
+let cursorVisible = false;
+let hoverScale = 1;
+let hoverRot = 0;
+let pressed = false;
+
+function refreshCursor() {
+  gsap.to(cursorInner, {
+    scale: pressed ? 0.75 : hoverScale,
+    rotation: hoverRot,
+    duration: 0.4,
+    ease: 'back.out(2)',
+    overwrite: 'auto',
+  });
+}
+
+function setCursorMode(mode) {
+  const modes = {
+    default: [1, 0],
+    link: [1.9, -12],
+    cat: [1.4, 0],
+  };
+  [hoverScale, hoverRot] = modes[mode] || modes.default;
+  refreshCursor();
+}
+
+if (canFinePointer) {
+  root.classList.add('has-custom-cursor');
+  gsap.set(cursorEl, { xPercent: -50, yPercent: -50 });
+
+  const cx = gsap.quickTo(cursorEl, 'x', { duration: 0.5, ease: 'power3' });
+  const cy = gsap.quickTo(cursorEl, 'y', { duration: 0.5, ease: 'power3' });
+
+  window.addEventListener('pointermove', (e) => {
+    cx(e.clientX);
+    cy(e.clientY);
+    if (!cursorVisible) {
+      cursorVisible = true;
+      gsap.to(cursorEl, { opacity: 1, duration: 0.3 });
+    }
+  });
+
+  document.addEventListener('mouseleave', () => {
+    cursorVisible = false;
+    gsap.to(cursorEl, { opacity: 0, duration: 0.2 });
+  });
+
+  window.addEventListener('pointerdown', () => { pressed = true; refreshCursor(); });
+  window.addEventListener('pointerup', () => { pressed = false; refreshCursor(); });
+
+  document.addEventListener('pointerover', (e) => {
+    if (e.target.closest(INTERACTIVE)) setCursorMode('link');
+  });
+
+  document.addEventListener('pointerout', (e) => {
+    if (!e.target.closest(INTERACTIVE)) return;
+    const next = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(INTERACTIVE);
+    if (!next) setCursorMode(hoverCat ? 'cat' : 'default');
+  });
+}
+
+/* ==========================================================
+   10. ANIMAÇÕES DE ENTRADA E REVELAÇÃO AO ROLAR
+   ========================================================== */
+function intro() {
+  gsap.from('.topbar', { y: -20, opacity: 0, duration: 0.9, ease: 'power3.out' });
+  gsap.from('[data-reveal]', {
+    y: 36,
+    opacity: 0,
+    duration: 1,
+    ease: 'power3.out',
+    stagger: 0.12,
+    delay: 0.15,
+  });
+}
+
+const revealIO = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      gsap.to(en.target, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' });
+      revealIO.unobserve(en.target);
+    });
+  },
+  { threshold: 0.15 }
+);
+
+document.querySelectorAll('[data-scroll]').forEach((el) => {
+  gsap.set(el, { opacity: 0, y: 40 });
+  revealIO.observe(el);
+});
+
+/* ==========================================================
+   11. RESIZE + LOOP DE RENDER (pausa fora da tela)
+   ========================================================== */
+function resize() {
+  const { width, height } = stage.getBoundingClientRect();
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.position.z = camera.aspect < 0.85 ? 9 : 6.5;
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(resize).observe(stage);
+resize();
+
+function renderLoop() {
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+const visibilityIO = new IntersectionObserver(([entry]) => {
+  renderer.setAnimationLoop(entry.isIntersecting ? renderLoop : null);
+});
+visibilityIO.observe(stage);
+
+/* ==========================================================
+   12. INICIALIZAÇÃO
+   ========================================================== */
+applyTheme(isDark, true);
+intro();

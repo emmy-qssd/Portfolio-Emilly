@@ -1,93 +1,166 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Portfólio | Front End & UI Designer</title>
-  <script>
-    /* aplica o tema salvo antes de renderizar (evita "flash") */
-    try { var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nome Sobrenome — Front-End & Designer Gráfica</title>
+  <meta name="description" content="Portfólio de desenvolvedora front-end e designer gráfica." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/styles/index.css" />
+
+  <!-- Importmap: Three.js + addons (OrbitControls, GLTFLoader) via CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@500;700;900&family=Jost:wght@300;400;500&family=Yeseva+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/index.css">
 </head>
 <body>
-  <div class="bg" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span></div>
-  <canvas id="cat-canvas" aria-hidden="true"></canvas>
 
-  <header class="nav-wrap">
-    <nav class="nav glass" aria-label="Principal">
+  <!-- Cursor personalizado (patinha) -->
+  <div class="cursor" aria-hidden="true">
+    <div class="cursor-inner">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <ellipse cx="12" cy="16.2" rx="5.2" ry="4.3" />
+        <circle cx="5.6" cy="10.4" r="2.3" />
+        <circle cx="9.4" cy="5.8" r="2.4" />
+        <circle cx="14.6" cy="5.8" r="2.4" />
+        <circle cx="18.4" cy="10.4" r="2.3" />
+      </svg>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#top">nome.dev</a>
+
+    <nav class="nav" aria-label="Principal">
       <a href="#sobre">Sobre</a>
-      <a href="#skills">Skills</a>
       <a href="#projetos">Projetos</a>
       <a href="#contato">Contato</a>
     </nav>
-    <button id="theme-toggle" class="glass theme-btn" type="button" aria-label="Alternar tema" aria-pressed="false">
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
-      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+
+    <button class="theme-toggle" type="button" aria-label="Alternar tema" aria-pressed="true">
+      <span class="track"><span class="knob"></span></span>
+      <span class="label">Escuro</span>
     </button>
   </header>
 
   <main>
-    <section class="hero" id="home">
+    <!-- HERO -->
+    <section class="hero" id="top">
       <div class="hero-text">
-        <h1 class="title" aria-label="Developer">
-          <span class="word" aria-hidden="true">DEVEL<span class="o-cat">O
-            <svg viewBox="0 0 100 150" preserveAspectRatio="none" aria-hidden="true">
-              <g class="ear ear-l"><path d="M19 48 L23 12 L45 39 Z"/></g>
-              <g class="ear ear-r"><path d="M81 48 L77 12 L55 39 Z"/></g>
-              <g class="o-face">
-                <ellipse cx="39" cy="74" rx="3" ry="4"/><ellipse cx="61" cy="74" rx="3" ry="4"/>
-                <path d="M47 83 Q50 86 53 83 Q50 91 47 83Z"/>
-                <path class="whiskers" d="M44 85L28 82M44 88L28 89M56 85L72 82M56 88L72 89"/>
-              </g>
-              <path class="o-tail" d="M50 112 C46 134 62 146 80 138 C90 133 92 126 88 122" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-            </svg></span>PER</span>
+        <p class="eyebrow mono" data-reveal>front-end dev &amp; designer gráfica</p>
+
+        <h1 class="display" data-reveal>
+          Interfaces que <em>respiram</em><br />
+          com cuidado de designer.
         </h1>
-        <p class="role">Front End | UI Designer</p>
-      </div>
+
+        <p class="lead" data-reveal>
+          Transformo ideias em experiências web limpas, animadas e acessíveis.
+          Do pixel perfeito ao código que roda liso em qualquer tela.
+        </p>
+
+        <div class="hero-meta mono" data-reveal>
+          <span>HTML/CSS</span>
+          <span>JavaScript</span>
+          <span>React</span>
+          <span>Three.js</span>
+          <span>GSAP</span>
+          <span>Figma</span>
+        </div>
+
     </section>
 
+    <!-- SOBRE -->
     <section class="section" id="sobre">
-      <div class="sec-title"><span class="line"></span><div class="head"><span class="num">01</span><h2>Sobre mim</h2></div><span class="line l2"></span></div>
-      <div class="card glass reveal">
-        <p>Olá! Sou desenvolvedora front end e UI designer. Gosto de transformar ideias em interfaces claras, acessíveis e cheias de personalidade.</p>
-        <p>Edite este texto com a sua história, formação e o que te move como profissional.</p>
+      <header class="section-head mono">
+        <span>01</span>
+        <span class="rule"></span>
+        <span>sobre</span>
+      </header>
+
+      <div class="about-grid">
+        <p class="about-big display" data-scroll>
+          Desenho e programo com a mesma obsessão por detalhe, ritmo e clareza.
+        </p>
+
+        <div class="about-copy" data-scroll>
+          <p>
+            Tenho formação em design gráfico e atuo com desenvolvimento front-end há anos.
+            Trabalho com sistemas de design, motion e interfaces que equilibram estética e performance.
+          </p>
+          <ul class="stack mono">
+            <li>// tipografia com intenção</li>
+            <li>// motion com propósito</li>
+            <li>// código semântico e acessível</li>
+            <li>// 3D leve e responsivo</li>
+          </ul>
+        </div>
       </div>
     </section>
 
-    <section class="section" id="skills">
-      <div class="sec-title"><span class="line"></span><div class="head"><span class="num">02</span><h2>Skills</h2></div><span class="line l2"></span></div>
-      <ul class="chips stagger">
-        <li class="glass">HTML</li><li class="glass">CSS</li><li class="glass">JavaScript</li>
-        <li class="glass">GSAP</li><li class="glass">Three.js</li><li class="glass">Figma</li>
-        <li class="glass">UI Design</li><li class="glass">Responsividade</li>
-      </ul>
-    </section>
-
+    <!-- PROJETOS -->
     <section class="section" id="projetos">
-      <div class="sec-title"><span class="line"></span><div class="head"><span class="num">03</span><h2>Projetos</h2></div><span class="line l2"></span></div>
-      <div class="grid stagger">
-        <article class="card glass"><h3>Projeto um</h3><p>Descreva o problema, a sua solução e as tecnologias usadas.</p></article>
-        <article class="card glass"><h3>Projeto dois</h3><p>Descreva o problema, a sua solução e as tecnologias usadas.</p></article>
-        <article class="card glass"><h3>Projeto três</h3><p>Descreva o problema, a sua solução e as tecnologias usadas.</p></article>
-      </div>
-    </section>
+      <header class="section-head mono">
+        <span>02</span>
+        <span class="rule"></span>
+        <span>projetos</span>
+      </header>
 
-    <section class="section last" id="contato">
-      <div class="sec-title"><span class="line"></span><div class="head"><span class="num">04</span><h2>Contato</h2></div><span class="line l2"></span></div>
-      <div class="card glass reveal">
-        <p>Vamos conversar sobre o seu próximo projeto?</p>
-        <p class="links"><a href="mailto:seuemail@exemplo.com">seuemail@exemplo.com</a> <a href="#" rel="noopener">LinkedIn</a> <a href="#" rel="noopener">GitHub</a></p>
+      <div class="projects">
+        <article class="card" data-scroll data-cursor="hover">
+          <div class="card-visual"></div>
+          <div class="card-body">
+            <p class="mono card-index">01</p>
+            <h3 class="card-title">Plataforma de Design System</h3>
+            <p class="mono card-tags">React · Storybook · Tokens</p>
+          </div>
+        </article>
+
+        <article class="card" data-scroll data-cursor="hover">
+          <div class="card-visual"></div>
+          <div class="card-body">
+            <p class="mono card-index">02</p>
+            <h3 class="card-title">Identidade &amp; Site Institucional</h3>
+            <p class="mono card-tags">Branding · HTML/CSS · GSAP</p>
+          </div>
+        </article>
+
+        <article class="card" data-scroll data-cursor="hover">
+          <div class="card-visual"></div>
+          <div class="card-body">
+            <p class="mono card-index">03</p>
+            <h3 class="card-title">Experiência 3D Interativa</h3>
+            <p class="mono card-tags">Three.js · GLTF · Motion</p>
+          </div>
+        </article>
       </div>
     </section>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- CONTATO -->
+  <footer class="footer" id="contato">
+    <p class="mono eyebrow" data-scroll>// vamos conversar</p>
+    <a class="footer-mail display" href="mailto:ola@seudominio.dev" data-cursor="hover" data-scroll>
+      ola@seudominio.dev
+    </a>
+    <div class="footer-bar mono">
+      <span>© 2026 Nome Sobrenome</span>
+      <span>feito com HTML, CSS, Three.js &amp; GSAP</span>
+    </div>
+  </footer>
+
+  <!-- GSAP (global) e app principal (módulo ES) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="interaction/index.js"></script>
+  <script type="module" src="interaction/index.js"></script>
 </body>
 </html>
