@@ -691,3 +691,19 @@ main {
   font: italic 400 clamp(72px, 10vw, 120px)/1 var(--font-serif);
   text-shadow: 0 0 32px color-mix(in srgb, var(--accent) 38%, transparent);
 }
+/* Hero no mobile: mantém o texto em largura total e a animação quadrada abaixo dele. */
+@media (max-width: 640px) {
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-text { width: 100%; }
+  .hero-visual {
+    flex: 0 0 auto;
+    align-self: center;
+    width: min(68vw, 280px);
+    aspect-ratio: 1;
+    margin: 24px auto 0;
+  }
+}
