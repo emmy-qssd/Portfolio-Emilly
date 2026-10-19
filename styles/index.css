@@ -1,28 +1,28 @@
-/* styles.css */
-
-/* ==========================================================
-   1. VARIÁVEIS DE TEMA
-   Valores iniciais (escuro). O GSAP sobrescreve estas variáveis
-   no :root durante a troca de tema.
-   ========================================================== */
+/* Paleta e tipografia */
 :root {
-  --bg: #000000;
-  --fg: #ffffff;
-  --muted: rgba(255, 255, 255, 0.56);
-  --line: rgba(255, 255, 255, 0.14);
-  --accent: #a9cce8; /* Azul-bebê pastel */
-
+  --bg: #08090c;
+  --fg: #f5f6f8;
+  --muted: #b8c0cb;
+  --line: rgba(220, 228, 238, 0.2);
+  --accent: #b7d9f3;
+  --glass-bg: rgba(14, 17, 23, 0.76);
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-serif: 'Instrument Serif', Georgia, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
   --gutter: clamp(20px, 5vw, 80px);
   color-scheme: dark;
 }
 
-/* ==========================================================
-   2. RESET E BASE
-   ========================================================== */
+:root[data-theme="light"] {
+  --bg: #f7f8fa;
+  --fg: #171a20;
+  --muted: #454d59;
+  --line: rgba(35, 45, 58, 0.22);
+  --accent: #315f86;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  color-scheme: light;
+}
+
 *,
 *::before,
 *::after {
@@ -37,30 +37,26 @@ html {
 }
 
 body {
+  min-height: 100vh;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-display);
-  font-size: 16px;
-  line-height: 1.5;
-  overflow-x: hidden;
+  font: 16px/1.5 var(--font-display);
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  transition: background-color .35s ease, color .35s ease;
 }
 
-/* Grade sutil de fundo (acompanha o tema) */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  z-index: 0;
+  pointer-events: none;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse at 70% 40%, #000 0%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse at 70% 40%, #000 0%, transparent 70%);
-  opacity: 0.35;
-  pointer-events: none;
-  z-index: 0;
+  opacity: .35;
 }
 
 a {
@@ -77,38 +73,35 @@ button {
 }
 
 .mono {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.08em;
   color: var(--muted);
+  font: 12px var(--font-mono);
+  letter-spacing: .08em;
 }
 
 .display {
   font-family: var(--font-display);
   font-weight: 500;
-  letter-spacing: -0.035em;
+  letter-spacing: -.035em;
 }
 
-/* Cursor personalizado: esconde o nativo apenas em dispositivos com mouse */
+/* Cursor de patinha para mouse */
 html.has-custom-cursor,
 html.has-custom-cursor * {
   cursor: none !important;
 }
 
-/* ==========================================================
-   3. CURSOR PERSONALIZADO (patinha)
-   ========================================================== */
 .cursor {
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 9999;
   width: 32px;
   height: 32px;
   pointer-events: none;
-  z-index: 9999;
   opacity: 0;
-  mix-blend-mode: difference;
-  color: #ffffff;
+  color: var(--fg);
+  transform: translate(-50%, -50%) scale(.8) rotate(-8deg);
+  transition: opacity .18s ease, transform .22s cubic-bezier(.2, .7, .2, 1);
 }
 
 .cursor-inner {
@@ -117,36 +110,52 @@ html.has-custom-cursor * {
 }
 
 .cursor svg {
+  display: block;
   width: 100%;
   height: 100%;
   fill: currentColor;
-  display: block;
+}
+
+.cursor.is-visible {
+  opacity: 1;
+}
+
+.cursor.is-hovering {
+  transform: translate(-50%, -50%) scale(1.35) rotate(-8deg);
+}
+
+.cursor.is-pressed {
+  transform: translate(-50%, -50%) scale(.72) rotate(-8deg);
 }
 
 html:not(.has-custom-cursor) .cursor {
   display: none;
 }
 
-/* ==========================================================
-   4. TOPBAR
-   ========================================================== */
+/* Header de vidro */
 .topbar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 14px;
+  left: var(--gutter);
+  right: var(--gutter);
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 22px var(--gutter);
+  padding: 15px clamp(16px, 2.4vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, .2);
+  transition: background-color .35s ease, border-color .35s ease, box-shadow .35s ease;
 }
 
 .brand {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.14em;
+  font: 13px var(--font-mono);
+  letter-spacing: .14em;
   text-transform: uppercase;
 }
 
@@ -157,25 +166,24 @@ html:not(.has-custom-cursor) .cursor {
 
 .nav a {
   position: relative;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--muted);
-  transition: color 0.3s ease;
+  font: 12px var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: color .25s ease;
 }
 
 .nav a::after {
   content: '';
   position: absolute;
-  left: 0;
   right: 0;
-  bottom: -4px;
+  bottom: -5px;
+  left: 0;
   height: 1px;
   background: var(--accent);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition: transform .3s ease;
 }
 
 .nav a:hover {
@@ -186,7 +194,6 @@ html:not(.has-custom-cursor) .cursor {
   transform: scaleX(1);
 }
 
-/* Botão de tema minimalista */
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -195,11 +202,11 @@ html:not(.has-custom-cursor) .cursor {
 
 .theme-toggle .track {
   position: relative;
+  display: block;
   width: 44px;
   height: 24px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  display: block;
 }
 
 .theme-toggle .knob {
@@ -210,22 +217,24 @@ html:not(.has-custom-cursor) .cursor {
   height: 16px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 12px rgba(169, 204, 232, 0.6);
+  box-shadow: 0 0 12px rgba(90, 145, 190, .38);
+  transform: translateX(0);
+  transition: transform .25s ease, background-color .35s ease;
+}
+
+:root[data-theme="dark"] .theme-toggle .knob {
+  transform: translateX(20px);
 }
 
 .theme-toggle .label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
   min-width: 52px;
+  color: var(--muted);
+  font: 11px var(--font-mono);
+  letter-spacing: .14em;
   text-align: left;
+  text-transform: uppercase;
 }
 
-/* ==========================================================
-   5. HERO
-   ========================================================== */
 main {
   position: relative;
   z-index: 1;
@@ -234,19 +243,17 @@ main {
 .hero {
   position: relative;
   z-index: 1;
-  min-height: 100svh;
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
+  display: flex;
   align-items: center;
-  gap: 2vw;
-  padding: 120px var(--gutter) 60px;
+  min-height: 100svh;
+  padding: 140px var(--gutter) 60px;
 }
 
 .hero-text {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  max-width: 640px;
+  max-width: 760px;
 }
 
 .eyebrow {
@@ -267,21 +274,19 @@ main {
 
 .hero h1.display {
   font-size: clamp(44px, 7vw, 116px);
-  line-height: 0.95;
+  line-height: .95;
 }
 
 .hero h1 em {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.01em;
   color: var(--accent);
+  font: italic 400 1em var(--font-serif);
+  letter-spacing: -.01em;
 }
 
 .lead {
   max-width: 42ch;
-  font-size: clamp(16px, 1.3vw, 19px);
   color: var(--muted);
+  font-size: clamp(16px, 1.3vw, 19px);
   line-height: 1.6;
 }
 
@@ -292,60 +297,13 @@ main {
 }
 
 .hero-meta span {
+  padding: 6px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 6px 12px;
   font-size: 11px;
   text-transform: uppercase;
 }
 
-.cta {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 15px 26px;
-  border: 1px solid var(--fg);
-  border-radius: 999px;
-  font-weight: 500;
-  font-size: 15px;
-  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
-}
-
-.cta:hover {
-  background: var(--fg);
-  color: var(--bg);
-}
-
-/* Palco 3D */
-.cat-stage {
-  position: relative;
-  width: 100%;
-  height: min(72vh, 680px);
-  min-width: 0;
-}
-
-.cat-stage canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  touch-action: manipulation;
-}
-
-.hint {
-  position: absolute;
-  left: 50%;
-  bottom: 6%;
-  transform: translateX(-50%);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-/* ==========================================================
-   6. SEÇÕES
-   ========================================================== */
 .section {
   position: relative;
   z-index: 1;
@@ -379,16 +337,16 @@ main {
 }
 
 .about-copy p {
+  margin-bottom: 28px;
   color: var(--muted);
   font-size: 17px;
   line-height: 1.7;
-  margin-bottom: 28px;
 }
 
 .stack {
-  list-style: none;
   display: grid;
   gap: 10px;
+  list-style: none;
 }
 
 .stack li {
@@ -396,7 +354,6 @@ main {
   border-bottom: 1px solid var(--line);
 }
 
-/* Projetos */
 .projects {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -411,7 +368,115 @@ main {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 22px;
-  transition: border-color 0.4s ease, transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition: border-color .35s ease, transform .45s cubic-bezier(.2, .7, .2, 1), background-color .35s ease;
+}
+
+.hero {
+  grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr);
+  gap: clamp(24px, 5vw, 80px);
+}
+
+.hero-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 460px);
+  aspect-ratio: 1;
+  justify-self: center;
+  isolation: isolate;
+}
+
+.hero-visual__halo {
+  position: absolute;
+  inset: 15%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 68%);
+  filter: blur(12px);
+  animation: halo-breathe 5s ease-in-out infinite alternate;
+}
+
+.hero-visual__orbit {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.hero-visual__orbit--outer {
+  inset: 8%;
+  transform: rotate(-24deg) scaleY(.72);
+}
+
+.hero-visual__orbit--inner {
+  inset: 20%;
+  transform: rotate(32deg) scaleY(.78);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.hero-visual__core {
+  display: grid;
+  place-items: center;
+  width: 38%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--line));
+  border-radius: 50%;
+  background: var(--glass-bg);
+  box-shadow: 0 0 50px color-mix(in srgb, var(--accent) 18%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3);
+  color: var(--accent);
+  font: 500 clamp(24px, 4vw, 42px) var(--font-serif);
+  backdrop-filter: blur(8px);
+  animation: core-float 4s ease-in-out infinite;
+}
+
+.hero-visual__spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.hero-visual__spark--one {
+  top: 18%;
+  left: 27%;
+  animation: spark-drift 4.2s ease-in-out infinite alternate;
+}
+
+.hero-visual__spark--two {
+  right: 14%;
+  bottom: 32%;
+  width: 7px;
+  height: 7px;
+  animation: spark-drift 5s ease-in-out -1.5s infinite alternate-reverse;
+}
+
+.hero-visual__spark--three {
+  bottom: 18%;
+  left: 35%;
+  width: 5px;
+  height: 5px;
+  animation: spark-drift 3.8s ease-in-out -2s infinite alternate;
+}
+
+@keyframes core-float {
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes halo-breathe {
+  to {
+    opacity: .55;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes spark-drift {
+  to {
+    transform: translate(7px, -10px);
+    opacity: .55;
+  }
 }
 
 .card:hover {
@@ -422,12 +487,28 @@ main {
 .card-visual {
   flex: 1;
   border-radius: 14px;
-  background:
-    radial-gradient(circle at 30% 30%, var(--accent) 0%, transparent 55%),
-    repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 14px);
-  opacity: 0.85;
+  background: radial-gradient(circle at 30% 30%, var(--accent) 0%, transparent 55%), repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 14px);
+  opacity: .85;
 }
 
+.card-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: inherit;
+}
+.card:first-child .card-visual { overflow: hidden; opacity: 1; }
+.card-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: inherit;
+}
+.card:first-child .card-visual { overflow: hidden; opacity: 1; }
 .card-body {
   display: grid;
   gap: 8px;
@@ -441,27 +522,24 @@ main {
 .card-title {
   font-size: 22px;
   font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: -.02em;
   line-height: 1.2;
 }
 
-/* ==========================================================
-   7. FOOTER
-   ========================================================== */
 .footer {
   position: relative;
   z-index: 1;
-  padding: clamp(100px, 14vw, 180px) var(--gutter) 40px;
   display: grid;
   gap: 28px;
+  padding: clamp(100px, 14vw, 180px) var(--gutter) 40px;
   border-top: 1px solid var(--line);
 }
 
 .footer-mail {
-  font-size: clamp(36px, 8vw, 128px);
+  font-size: 90px;
   line-height: 1;
   word-break: break-word;
-  transition: color 0.4s ease;
+  transition: color .3s ease;
 }
 
 .footer-mail:hover {
@@ -478,21 +556,18 @@ main {
   text-transform: uppercase;
 }
 
-/* ==========================================================
-   8. RESPONSIVO
-   ========================================================== */
+.will-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1);
+}
+
+.will-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (max-width: 960px) {
-  .hero {
-    grid-template-columns: 1fr;
-    padding-top: 110px;
-    gap: 0;
-  }
-
-  .cat-stage {
-    order: -1;
-    height: 52vh;
-  }
-
   .about-grid {
     grid-template-columns: 1fr;
   }
@@ -503,6 +578,14 @@ main {
 }
 
 @media (max-width: 640px) {
+  .topbar {
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    padding: 13px 14px;
+    border-radius: 15px;
+  }
+
   .nav {
     display: none;
   }
@@ -514,10 +597,97 @@ main {
   .card {
     min-height: 320px;
   }
+
+  .hero {
+    padding-top: 125px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+
+  .will-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, .65fr);
+    gap: 20px;
+  }
+
+  .hero-visual {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-visual {
+    width: min(68vw, 280px);
+    margin: 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .hero-visual__halo,
+  .hero-visual__core,
+  .hero-visual__spark {
+    animation: none !important;
+  }
+}
+
+.hero-visual__star {
+  display: block;
+  font-family: Georgia, serif;
+  font-size: clamp(62px, 10vw, 112px);
+  line-height: 1;
+  text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 48%, transparent);
+  animation: star-turn 18s linear infinite;
+}
+
+@keyframes star-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-visual__star {
+    animation: none !important;
+  }
+}
+/* Ajustes visuais específicos dos projetos */
+.card-visual--portfolio {
+  overflow: hidden;
+  padding: 0;
+  background: none;
+  opacity: 1;
+}
+.card-visual--portfolio img { object-position: 15% top; }
+.card-visual--upcoming {
+  display: grid;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--accent) 60%, var(--line));
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 20%, transparent), transparent 68%);
+}
+.card-visual--upcoming span {
+  color: var(--accent);
+  font: italic 400 clamp(72px, 10vw, 120px)/1 var(--font-serif);
+  text-shadow: 0 0 32px color-mix(in srgb, var(--accent) 38%, transparent);
 }

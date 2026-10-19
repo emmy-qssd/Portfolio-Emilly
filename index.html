@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nome Sobrenome — Front-End & Designer Gráfica</title>
+  <title> Emilly.dev — Front-End</title>
   <meta name="description" content="Portfólio de desenvolvedora front-end e designer gráfica." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,16 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/styles/index.css" />
-
-  <!-- Importmap: Three.js + addons (OrbitControls, GLTFLoader) via CDN -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
+  <link rel="shortcut icon" href="/img/Logo EM.png" type="image/x-icon">
 </head>
 <body>
 
@@ -39,7 +29,7 @@
   </div>
 
   <header class="topbar">
-    <a class="brand" href="#top">nome.dev</a>
+    <a class="brand" href="#top">Emilly.dev</a>
 
     <nav class="nav" aria-label="Principal">
       <a href="#sobre">Sobre</a>
@@ -57,7 +47,7 @@
     <!-- HERO -->
     <section class="hero" id="top">
       <div class="hero-text">
-        <p class="eyebrow mono" data-reveal>front-end dev &amp; designer gráfica</p>
+        <p class="eyebrow mono" data-reveal>front-end dev &amp; futura designer gráfica</p>
 
         <h1 class="display" data-reveal>
           Interfaces que <em>respiram</em><br />
@@ -73,11 +63,21 @@
           <span>HTML/CSS</span>
           <span>JavaScript</span>
           <span>React</span>
-          <span>Three.js</span>
-          <span>GSAP</span>
+          <span>Python</span>
+          <span>TypeScript</span>
           <span>Figma</span>
         </div>
+      </div>
 
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-visual__halo"></div>
+        <div class="hero-visual__orbit hero-visual__orbit--outer"></div>
+        <div class="hero-visual__orbit hero-visual__orbit--inner"></div>
+        <div class="hero-visual__core"><span class="hero-visual__star">✦</span></div>
+        <span class="hero-visual__spark hero-visual__spark--one"></span>
+        <span class="hero-visual__spark hero-visual__spark--two"></span>
+        <span class="hero-visual__spark hero-visual__spark--three"></span>
+      </div>
     </section>
 
     <!-- SOBRE -->
@@ -95,14 +95,12 @@
 
         <div class="about-copy" data-scroll>
           <p>
-            Tenho formação em design gráfico e atuo com desenvolvimento front-end há anos.
-            Trabalho com sistemas de design, motion e interfaces que equilibram estética e performance.
+            Pretendo ter futura formação em design gráfico e atuo com desenvolvimento front-end há um ano.
+            Trabalho com sistemas de design pelo figma e interfaces que equilibram estética e performance.
           </p>
           <ul class="stack mono">
             <li>// tipografia com intenção</li>
-            <li>// motion com propósito</li>
             <li>// código semântico e acessível</li>
-            <li>// 3D leve e responsivo</li>
           </ul>
         </div>
       </div>
@@ -118,29 +116,30 @@
 
       <div class="projects">
         <article class="card" data-scroll data-cursor="hover">
-          <div class="card-visual"></div>
+          <div class="card-visual"><img src="/img/login.png" alt="Tela de login do sistema de ponto de venda" loading="lazy" /></div>
           <div class="card-body">
             <p class="mono card-index">01</p>
-            <h3 class="card-title">Plataforma de Design System</h3>
-            <p class="mono card-tags">React · Storybook · Tokens</p>
+            <h3 class="card-title">Sistema de Ponto de Venda</h3>
+            <p> Criado juntamente com minha equipe</p>
+            <p class="mono card-tags">HTML/CSS · Python · SQLite</p><a href="https://github.com/bakv-team/AAPM"> Link: GitHub</a>
           </div>
         </article>
 
         <article class="card" data-scroll data-cursor="hover">
-          <div class="card-visual"></div>
+          <div class="card-visual card-visual--portfolio"><img src="/img/portfolio.png" alt="Prévia visual do projeto de portfólio" loading="lazy" /></div>
           <div class="card-body">
             <p class="mono card-index">02</p>
-            <h3 class="card-title">Identidade &amp; Site Institucional</h3>
-            <p class="mono card-tags">Branding · HTML/CSS · GSAP</p>
+            <h3 class="card-title"> Este Portifólio</h3>
+            <p class="mono card-tags"> JavaScript · HTML/CSS · FontGoogle</p> 
           </div>
         </article>
 
         <article class="card" data-scroll data-cursor="hover">
-          <div class="card-visual"></div>
+          <div class="card-visual card-visual--upcoming" aria-label="Projeto futuro"><span aria-hidden="true">?</span></div>
           <div class="card-body">
             <p class="mono card-index">03</p>
-            <h3 class="card-title">Experiência 3D Interativa</h3>
-            <p class="mono card-tags">Three.js · GLTF · Motion</p>
+            <h3 class="card-title">Futuro site de Moda </h3>
+            <p class="mono card-tags">HTML · CSS · JavaScript</p>
           </div>
         </article>
       </div>
@@ -150,17 +149,14 @@
   <!-- CONTATO -->
   <footer class="footer" id="contato">
     <p class="mono eyebrow" data-scroll>// vamos conversar</p>
-    <a class="footer-mail display" href="mailto:ola@seudominio.dev" data-cursor="hover" data-scroll>
-      ola@seudominio.dev
+    <a class="footer-mail display" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=emillyqssd.dev%40gmail.com&amp;su=Contato%20pelo%20portf%C3%B3lio&amp;body=Ol%C3%A1%2C%20Emilly!%0A%0AEncontrei%20seu%20portf%C3%B3lio%20e%20gostaria%20de%20conversar." target="_blank" rel="noopener noreferrer" aria-label="Escrever um e-mail para Emilly no Gmail" data-cursor="hover" data-scroll>
+    emillyqssd.dev@gmail.com
     </a>
     <div class="footer-bar mono">
-      <span>© 2026 Nome Sobrenome</span>
-      <span>feito com HTML, CSS, Three.js &amp; GSAP</span>
+      <span>© 2026 Emilly Quessada</span>
+      <span>feito com HTML, CSS, &amp; JavaScript</span>
     </div>
   </footer>
-
-  <!-- GSAP (global) e app principal (módulo ES) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script type="module" src="interaction/index.js"></script>
+  <script src="interaction/index.js" defer></script>
 </body>
 </html>
